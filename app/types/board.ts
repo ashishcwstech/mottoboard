@@ -6,6 +6,8 @@ export interface BoardItem {
   type: string;
   x: number;
   y: number;
+  scaleX?: number;
+  scaleY?: number;
   width?: number;
   height?: number;
   name?:string;
@@ -35,6 +37,8 @@ export interface ACCESSORIESITEMS {
   id?:string;
   label:string;
   material:any;
+  scaleX:number;
+  scaleY:number;
 }
 
 export interface CuratedItem {

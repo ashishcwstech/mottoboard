@@ -1,8 +1,9 @@
 "use client";
-import { Search, SlidersHorizontal } from "lucide-react";
-import { BACKGROUNDS, ACCESSORIES } from "../lib/data";
+import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { BACKGROUNDS, ACCESSORIES,STORAGE_KEY } from "../lib/data";
 import type { BoardItem } from "../types/board";
 import { useState } from "react";
+
 
 const Icons: Record<string, React.ReactNode> = {
   Objects: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className="w-[20px] h-[20px]"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
@@ -20,14 +21,6 @@ const NAV_ITEMS = ["Objects","Background","Accessories","Paints","Templates","La
 type NavItem = typeof NAV_ITEMS[number];
 
 
-
-
-interface Props {
-  onAddItem: (partial: Omit<BoardItem, "id">) => void;
-  onAddBackground: (url: string) => void;
-  onAddMaterialColor: (color: string) => void;
-}
-
 const FLOOR_MATERIALS = [
   { id: "wg-ans",  name: "Wolf Gordon — Ansonia",   sub: "Limestone",         color: "#c9c5b8" },
   { id: "tar-cr",  name: "Tarkett — Crayon",        sub: "Razzmatazz 48012",  color: "#6b1a2a" },
@@ -39,14 +32,31 @@ const FLOOR_MATERIALS = [
   { id: "int-3s",  name: "Interface",               sub: "Third Space 303",   color: "#8c8fa0" },
 ];
 
+
+interface Props {
+  onAddItem: (partial: Omit<BoardItem, "id">) => void;
+  onAddBackground: (url: string) => void;
+  onAddMaterialColor: (color: string) => void;
+  onAddDefaultTemplate: () => void;
+  onAddExistingTemplate: (template: any) => void;
+}
+
 export default function LeftSidebar({
   onAddItem,
   onAddBackground,
   onAddMaterialColor,
+  onAddDefaultTemplate,
+  onAddExistingTemplate
 }: Props) {
    const [active, setActive] = useState<NavItem>("Accessories");
   const [searchQuery, setSearchQuery] = useState("");
-  
+  let TEMPLATES: any[] = [];
+  if (active === "Templates") {
+    const get_data = localStorage.getItem(STORAGE_KEY);
+    TEMPLATES = get_data ? JSON.parse(get_data) : [];
+    console.log('templates',TEMPLATES);
+  }
+
   return (
     <div className="flex flex-shrink-0">
        <nav className="w-[88px] bg-[#111] flex flex-col items-center py-2 gap-0.5 flex-shrink-0 overflow-y-auto">
@@ -108,17 +118,49 @@ export default function LeftSidebar({
                       key={f.id}
                       draggable
                       onDragStart={(e) => e.dataTransfer.setData("application/json", JSON.stringify({
+                        material:{type: 'texture',texture: f.material.texture},
                         image: f.material.texture, z: 0.99, height: 50, width: 50, type: "Accessory", name: f.label,
                       }))}
                       onClick={() => onAddItem({ material:{type: 'texture',texture: f.material.texture}, x: 0.5, y: 0.5, z: 0.91, height: 50, width: 50, type: "Accessory", name: f.label })}
                       className="flex items-center gap-3 px-2 py-2 rounded-lg border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-md hover:border-gray-200 transition-all duration-150 text-left"
                     >
-                      <div className="w-12 h-12 flex-shrink-0 rounded-md overflow-hidden bg-white flex items-center justify-center border border-gray-100">
-                        <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${f.material.texture})` }}/>
+                      <div className="w-full h-25 flex-shrink-0 rounded-md overflow-hidden bg-white flex items-center justify-center border border-gray-100">
+                        <div className="w-full h-25 bg-cover bg-center" style={{ backgroundImage: `url(${f.material.texture})` }}/>
                       </div>
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+            
+            {/* Templates */}
+            {active === "Templates" && (
+              <div className="p-3 gap-2">
+                <div className="grid gap-2">
+                    <button
+                      onClick={() => onAddDefaultTemplate()}
+                      className="flex items-center gap-1.5 h-8 w-full px-3 text-center rounded border bg-blue-500 text-white border-gray-200 text-[12px] font-medium text-gray-600  transition-colors whitespace-nowrap">
+                       <Plus size={12}/> Add Template
+                    </button>             
+                </div>
+                <div className="p-3 grid gap-2">
+
+                  {TEMPLATES?.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => onAddExistingTemplate(f)}
+                      className="flex items-center gap-3 px-2 py-2 rounded-lg border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-md hover:border-gray-200 transition-all duration-150 text-left"
+                    >
+                      <div className="w-full h-25 flex-shrink-0 rounded-md overflow-hidden bg-white flex items-center justify-center border border-gray-100">
+                        <div
+                          className="w-full h-25 bg-cover bg-center"
+                          style={{ backgroundImage: `url(${f.image})` }}
+                        />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                
               </div>
             )}
 
@@ -143,7 +185,7 @@ export default function LeftSidebar({
             )}
 
             {/* EMPTY STATE */}
-            {!["Background", "Accessories", "Paints"].includes(active) && (
+            {!["Background", "Accessories", "Paints","Templates"].includes(active) && (
               <div className="flex flex-col items-center justify-center h-40 text-gray-400">
                 <p className="text-[12px]">No {active.toLowerCase()} yet</p>
               </div>

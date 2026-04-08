@@ -19,6 +19,8 @@ type Item = {
   width: number;
   height: number;
   material:any;
+  scaleX?: number; // ✅ optional scaleX
+  scaleY?: number; // ✅ optional scaleY
 };
 
 type Props = {
@@ -112,6 +114,7 @@ const CanvasBoardImageItem = forwardRef<Mesh, Props>(
       <group
         ref={groupRef}
         position={[item.x, item.y, item.z || 0]} // ✅ use item.z if available
+        scale={[item.scaleX || 1, item.scaleY || 1, 1]} // ✅ THIS LINE
         // position={[item.x, item.y, 0]}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}

@@ -37,16 +37,17 @@ type State = {
 export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onDrop,onDelete, background,onSaveSnapshot,onReady }: Props) { 
   const [position, setPosition] = useState({ x: 0, y: 0 });  
   const start = useRef({ x: 0, y: 0 });
+  
   const [scale, setScale] = useState(1);
   const isBoardDragging = useRef(false);
   const [isBoardIteamDragging, setIsBoardIteamDragging] = useState(false);
   const hasCanvasBoardDragged = useRef(false);
-  const hasCanvasBoardItemDragged = useRef(false);
-  
+  const hasCanvasBoardItemDragged = useRef(false); 
 
   const [activeBoardItemId, setActiveBoardItemId] = useState<string | null>(null);
   const [isItemRotating, setIsItemRotating] = useState(false);
-  const itemRefs = useRef<{ [key: string]: any }>({});  
+  const itemRefs = useRef<{ [key: string]: any }>({});
+  const sliderRef = useRef<HTMLDivElement>(null);  
 
 
 
@@ -80,7 +81,6 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     setIsBoardIteamDragging(false);
     hasCanvasBoardItemDragged.current = false; // ✅ reset
   };
-
   //--------------pointer move for items----------------
   const handlePointerMove = (e: ThreeEvent<PointerEvent>, id: string) => {
     if (!isBoardIteamDragging || activeBoardItemId !== id) return; // ✅ ONLY move when holding
@@ -96,8 +96,6 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     hasCanvasBoardItemDragged.current = true; // ✅ real movement happened
     console.log('Moving item:', id, 'New position:', currentRef.position);
   };
-
-  
 
   const handleCanvasPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isBoardDragging.current) return;
@@ -118,8 +116,6 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     //   y: e.clientY - start.current.y,
     // });
   };
-
-
   //--------------------pointer down for background and items----------------
 
   const handleCanvasPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -153,39 +149,64 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     setActiveBoardItemId(null);
     setIsItemRotating(false);
   };
-
-  const handleItemZoom = (id: string, factor: number) => {
+  const handleItemSize = (id: string, factor: number) => {
     const currentRef = itemRefs.current[id];
     if (!currentRef) return;
     currentRef.scale.x *= factor;
     currentRef.scale.y *= factor;
-  };
 
+     // 👉 Update state (FIXED ✅)
+    onUpdate(id, {
+      scaleX: (currentRef.scale.x),
+      scaleY: (currentRef.scale.y),
+    });
+  };
   const handleItemRotate = () => {
     setIsItemRotating((prev) => !prev);
   };
-
   //---------------z axis rotation handler ---------------
   const MAX_Z = 2; 
   const [zRotation, setZRotation] = useState(0.1); // 0 → 1
+  // const handleItemAxis = (
+  //     id: string,
+  //     e: React.MouseEvent<HTMLDivElement>
+  // ) => {
+  //   const ref = itemRefs.current[id];
+  //   if (!ref) return;
+
+  //   const container = e.currentTarget;
+  //   const rect = container.getBoundingClientRect();
+
+  //   const y = e.clientY - rect.top;
+  //   const height = container.clientHeight;
+
+  //   let percent = 1 - y / height;
+  //   percent = Math.max(0, Math.min(1, percent));
+
+  //   setZRotation(percent);        // UI knob
+  //   ref.position.z = percent * MAX_Z; // movement
+  //   flushAndSave();
+  // };
+
   const handleItemAxis = (
-      id: string,
-      e: React.MouseEvent<HTMLDivElement>
+    id: string,
+    e: React.PointerEvent<HTMLDivElement>
   ) => {
     const ref = itemRefs.current[id];
     if (!ref) return;
 
-    const container = e.currentTarget;
-    const rect = container.getBoundingClientRect();
+    const container = sliderRef.current;
+    if (!container) return;
 
+    const rect = container.getBoundingClientRect();
     const y = e.clientY - rect.top;
-    const height = container.clientHeight;
+    const height = rect.height;
 
     let percent = 1 - y / height;
     percent = Math.max(0, Math.min(1, percent));
 
-    setZRotation(percent);        // UI knob
-    ref.position.z = percent * MAX_Z; // movement
+    setZRotation(percent);
+    ref.position.z = percent * MAX_Z;
     flushAndSave();
   };
  
@@ -253,14 +274,14 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
                 <RotateCw size={18}  />
               </button>
               <button
-                onClick={() => handleItemZoom(activeBoardItemId, 1.2)}
+                onClick={() => handleItemSize(activeBoardItemId, 1.2)}
                 className="px-2 py-1  text-black  rounded"
               >
                 <Plus size={18} />
               </button>
               
               <button
-                onClick={() => handleItemZoom(activeBoardItemId, 0.8)}
+                onClick={() => handleItemSize(activeBoardItemId, 0.8)}
                 className="px-2 py-1  text-black rounded"
               >
                 <Minus size={18} />
@@ -268,18 +289,30 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
             </div>
             <div>
                 <div
-                  onMouseMove={(e) =>
-                    e.buttons === 1 &&
-                    activeBoardItemId &&
-                    handleItemAxis(activeBoardItemId, e)
-                  }
-                  onMouseDown={(e) =>
-                    activeBoardItemId &&
-                    handleItemAxis(activeBoardItemId, e)
-                  }
-                   className="relative h-64 w-3 bg-green-500 rounded-full cursor-pointer"
+                  // onMouseMove={(e) =>
+                  //   e.buttons === 1 &&
+                  //   activeBoardItemId &&
+                  //   handleItemAxis(activeBoardItemId, e)
+                  // }
+                  // onMouseDown={(e) =>
+                  //   activeBoardItemId &&
+                  //   handleItemAxis(activeBoardItemId, e)
+                  // }
+                  ref={sliderRef}
+                  onPointerDown={(e) => {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    activeBoardItemId && handleItemAxis(activeBoardItemId, e);
+                  }}
+                  onPointerMove={(e) => {
+                    if (e.buttons !== 1) return;
+                    activeBoardItemId && handleItemAxis(activeBoardItemId, e);
+                  }}
+                  onPointerUp={(e) => {
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                  }}
+                  className="relative h-64 w-3 bg-green-500 rounded-full cursor-pointer"
                 >
-                <div
+                  <div
                     className="absolute left-1/2 -translate-x-1/2 w-6 h-6 bg-white rounded-full shadow"
                     style={{
                       bottom:`${zRotation * 100}%`,

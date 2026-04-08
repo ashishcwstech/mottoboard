@@ -1,6 +1,7 @@
 "use client";
 import { Save, Undo, Redo, Share2, Download, FileText, Grid3X3, Maximize2, ScanSearch, Search, SlidersHorizontal, Filter } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
+import { STORAGE_KEY } from "../lib/data";
 import type { BoardItem } from "../types/board";
 import CanvasBoard from "../components/CanvasBoard";
 import LeftSidebar from "../components/LeftSidebar";
@@ -16,16 +17,16 @@ const sampleItems = [
   // { id: "54", name: "Marble Tile", type: "Tile", image: "/images/accessories/54.jpg", x: 10, y: 10, z: 0.6, width: 200, height: 200 },
   // { id: "58", name: "Marble Tile", type: "Tile", image: "/images/accessories/58.avif", x: 10, y: 10, z: 0.34, width: 200, height: 200 },
   // { id: "102", name: "Marble Tile", type: "Tile", image: "/images/accessories/102.avif", x: 10, y: 10, z: 0.8, width: 200, height: 200 },
-  { id: "50", name: "Marble Tile", type: "Tile", material:{type:'texture',texture: "/images/accessories/50.png"}, image: "/images/accessories/50.png", x: -0.42600000000000093, y: -0.00799999999999821, z: 0.9, width: 50, height: 50 },
-  { id: "51", name: "Marble Tile", type: "Tile", material:{type:'texture',texture: "/images/accessories/51.png"}, image: "/images/accessories/51.png", x: 2.4280000000000106, y:  0.5019999999999927, z: 0.734375, width: 100, height: 100 },
+  { id: "50", name: "Marble Tile", type: "Tile", material:{type:'texture',texture: "/images/accessories/50.png"}, image: "/images/accessories/50.png", x: -0.42600000000000093, y: -0.00799999999999821, z: 0.9, width: 50, height: 50,scaleX: 1,scaleY: 1 },
+  { id: "51", name: "Marble Tile", type: "Tile", material:{type:'texture',texture: "/images/accessories/51.png"}, image: "/images/accessories/51.png", x: 2.4280000000000106, y:  0.5019999999999927, z: 0.734375, width: 100, height: 100,scaleX: 1,scaleY: 1 },
   { id: "52", name: "Marble Tile", type: "Tile", 
       material:{
         type:'fabric',texture: "/images/accessories/52.avif",
         roughness: 0.9,
         metalness: 0,
-      }, image: "/images/accessories/52.avif", x: 1.1950000000000052, y: 0.37299999999997757, z: 0.7890625, width: 170, height: 300 },
-  { id: "57", name: "Marble Tile", type: "Tile" ,material:{type:'texture',texture: "/images/accessories/57.jpg"}, image: "/images/accessories/57.jpg", x: 1.0270000000000068, y: 1.3750000000000013, z: 1.1, width: 80, height: 80 },
-  { id: "59", name: "Marble Tile", type: "Tile" , material:{type:'texture',texture: "/images/accessories/59.avif"}, image: "/images/accessories/59.avif", x: -1.396000000000001, y: 0.10156000000000007, z: 0.86, width: 80, height: 300 },
+      }, image: "/images/accessories/52.avif", x: 1.1950000000000052, y: 0.37299999999997757, z: 0.7890625, width: 170, height: 300,scaleX: 1,scaleY: 1 },
+  { id: "57", name: "Marble Tile", type: "Tile" ,material:{type:'texture',texture: "/images/accessories/57.jpg"}, image: "/images/accessories/57.jpg", x: 1.0270000000000068, y: 1.3750000000000013, z: 1.1, width: 80, height: 80,scaleX: 1,scaleY: 1 },
+  { id: "59", name: "Marble Tile", type: "Tile" , material:{type:'texture',texture: "/images/accessories/59.avif"}, image: "/images/accessories/59.avif", x: -1.396000000000001, y: 0.10156000000000007, z: 0.86, width: 80, height: 300,scaleX: 1,scaleY: 1 },
   { id: "100", name: "Marble Tile", type: "Tile", 
       material:{
         type:'fabric',
@@ -34,7 +35,7 @@ const sampleItems = [
         metalness: 0,
       },
        image: "/images/accessories/100.avif", x: 0.4869999999999977, y: -0.10700000000002263, z: 0.7, width: 200, height: 300 },
-  { id: "106", name: "Marble Tile", type: "Tile", material:{type:'texture',texture: "/images/accessories/106.avif"}, image: "/images/accessories/106.avif", x: -0.23000000000000026, y: 0.5320000000000006, z: 0.265, width: 200, height: 200 },
+  { id: "106", name: "Marble Tile", type: "Tile", material:{type:'texture',texture: "/images/accessories/106.avif"}, image: "/images/accessories/106.avif", x: -0.23000000000000026, y: 0.5320000000000006, z: 0.265, width: 200, height: 200,scaleX: 1,scaleY: 1 },
   { id: "107", name: "Marble Tile", type: "Tile", 
       material:
       {
@@ -43,8 +44,8 @@ const sampleItems = [
         roughness: 0.9,
         metalness: 0,
       },
-  image: "/images/accessories/107.avif", x: -0.6049999999999762, y: 0.004000000000007045, z: 0.8, width: 200, height: 200 },
-  { id: "108", name: "Marble Tile", type: "Tile", material:{type:'texture',texture: "/images/accessories/108.avif"}, image: "/images/accessories/108.avif", x:1.9599999999999993, y: -1.1899999999999906, z: 0.7, width: 100, height: 100 },
+  image: "/images/accessories/107.avif", x: -0.6049999999999762, y: 0.004000000000007045, z: 0.8, width: 200, height: 200,scaleX: 1,scaleY: 1 },
+  { id: "108", name: "Marble Tile", type: "Tile", material:{type:'texture',texture: "/images/accessories/108.avif"}, image: "/images/accessories/108.avif", x:1.9599999999999993, y: -1.1899999999999906, z: 0.7, width: 100, height: 100,scaleX: 1,scaleY: 1 },
   { id: "109", name: "Marble Tile", type: "Tile",
     material:{
       type:'texture',
@@ -52,7 +53,7 @@ const sampleItems = [
       roughness: 0.9,
       metalness: 0,
     },
-    image: "/images/accessories/109.png", x: 0.6760000000000002, y: -1.6550000000000054, z: 0.8, width: 300, height: 80 },
+    image: "/images/accessories/109.png", x: 0.6760000000000002, y: -1.6550000000000054, z: 0.8, width: 300, height: 80,scaleX: 1,scaleY: 1 },
 ];
 
 const FLOOR_MATERIALS = [
@@ -168,21 +169,77 @@ export default function MaterialBoard() {
 
   
   const downloadBoard = () => {
+    const confirmSave = window.confirm("Do you want to save image this board?");
+    if (!confirmSave) return;
+
     const ctx = rendererRef.current;
     if (!ctx) return;
-
     const { gl, scene, camera } = ctx;
-
     // render latest frame
     gl.render(scene, camera);
-
     const dataURL = gl.domElement.toDataURL("image/png");
-
     const link = document.createElement("a");
     link.href = dataURL;
     link.download = "material-board.png";
     link.click();
   };
+
+  
+  const generateBoardImage = () => {
+    const ctx = rendererRef.current;
+    if (!ctx) return null;
+    const { gl, scene, camera } = ctx;
+    gl.render(scene, camera);
+    const dataURL = gl.domElement.toDataURL("image/png");
+    return dataURL; // 👈 important
+  };
+  
+  
+  const handleBoardSave = () => {
+    const confirmSave = window.confirm("Do you want to save this board?");
+    if (!confirmSave) return;
+
+    const image = generateBoardImage();
+
+    try {
+      const newBoard = {
+        id: "board-" + Math.random().toString(36).substring(2, 9),
+        title: boardTitle,
+        background: selectedBackground,
+        items,
+        image: image, // 👈 keep naming consistent with your UI
+        createdAt: new Date().toISOString(),
+      };
+      // 👉 Step 1: get existing data
+      const existing = localStorage.getItem(STORAGE_KEY);
+      // 👉 Step 2: parse or fallback to []
+      const boards = existing ? JSON.parse(existing) : [];
+      // 👉 Step 3: push new board
+      boards.push(newBoard);
+      // 👉 Step 4: save back
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(boards));
+
+    } catch (err) {
+      console.error("Save failed", err);
+    }
+  };
+
+
+  //------------------ Template start ---------------------------------
+
+  const onAddDefaultTemplate = useCallback(() => {
+    setItems([]);
+    setBackground("");
+  }, []);
+
+  const onAddExistingTemplate = useCallback((template: any) => {
+    if (!template || typeof template !== "object") return;
+    setItems(template.items || []);
+    setBackground(template.background || "");
+
+  }, []);
+
+  //------------------Template end ---------------------------------
 
 
 
@@ -205,12 +262,22 @@ export default function MaterialBoard() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> My Projects
         </button>
         <div className="flex items-center gap-0.5 ml-2 border border-gray-200 rounded-md bg-white px-1 py-0.5">
-          <ToolBtn title="Save"><Save size={14}/></ToolBtn>
-          <ToolBtn title="Undo" onClick={handleUndo} disabled={!canUndo}><Undo size={14}/></ToolBtn>
-          <ToolBtn title="Redo" onClick={handleRedo} disabled={!canRedo}><Redo size={14}/></ToolBtn>
+          <ToolBtn title="Save" onClick={handleBoardSave}>
+            <Save size={14}/>
+          </ToolBtn>
+          <ToolBtn title="Undo" onClick={handleUndo} disabled={!canUndo}>
+            <Undo size={14}/>
+          </ToolBtn>
+          <ToolBtn title="Redo" onClick={handleRedo} disabled={!canRedo}>
+            <Redo size={14}/>
+          </ToolBtn>
           <div className="w-px h-4 bg-gray-200 mx-0.5"/>
-          <ToolBtn title="Grid"><Grid3X3 size={14}/></ToolBtn>
-          <ToolBtn title="Fit"><Maximize2 size={14}/></ToolBtn>
+          <ToolBtn title="Grid">
+            <Grid3X3 size={14}/>
+          </ToolBtn>
+          <ToolBtn title="Fit">
+            <Maximize2 size={14}/>
+          </ToolBtn>
           <ToolBtn title="Focus"><ScanSearch size={14}/></ToolBtn>
         </div>
         <div className="flex-1 flex justify-center">
@@ -240,11 +307,12 @@ export default function MaterialBoard() {
       {/* MAIN BODY */}
       <div className="flex flex-1 overflow-hidden">
 
-        
         <LeftSidebar
           onAddItem={addItem}
           onAddBackground={addBackground}
           onAddMaterialColor={addMaterialColor}
+          onAddDefaultTemplate={onAddDefaultTemplate}
+          onAddExistingTemplate ={onAddExistingTemplate}
         />
 
         {/* CANVAS */}

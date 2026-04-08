@@ -1,5 +1,5 @@
 import type { BoardItem, PaletteColor, BackGound, ACCESSORIESITEMS, CuratedItem } from "./../types/board";
-
+export const STORAGE_KEY = "material-boards";
 
 export const BACKGROUNDS: BackGound[] = [
     {  url:"/images/background/1.jpg" },
@@ -17,17 +17,23 @@ export const BACKGROUNDS: BackGound[] = [
 ];
 
 export const ACCESSORIES: ACCESSORIESITEMS[] = [
-  {id: "50", label: "Cha",material:{type:'texture',texture: "/images/accessories/50.png"}  }, 
-  {id: "51", label: "51",material:{type:'texture',texture: "/images/accessories/51.png"}   }, 
-  {id: "52", label: "52",material:{type:'texture',texture: "/images/accessories/52.avif"}   }, 
-  {id: "53", label: "53",material:{type:'texture',texture: "/images/accessories/53.avif"}   },   
-  {id: "58", label: "58",material:{type:'texture',texture: "/images/accessories/58.avif"}   },
-  {id: "59", label: "59",material:{type:'texture',texture: "/images/accessories/59.avif"}   }, 
-  {id: "102", label: "102",material:{type:'texture',texture: "/images/accessories/102.avif"}},  
-  {id: "106", label: "106",material:{type:'texture',texture: "/images/accessories/106.avif"}   }, 
-  {id: "107", label: "107",material:{type:'texture',texture: "/images/accessories/107.avif"}  }, 
-  {id: "108", label: "108",material:{type:'texture',texture: "/images/accessories/108.avif"} },
+  {id: "50", label: "Cha",material:{type:'texture',texture: "/images/accessories/50.png"},scaleX: 1,scaleY: 1  }, 
+  {id: "51", label: "51",material:{type:'texture',texture: "/images/accessories/51.png"},scaleX: 1,scaleY: 1   }, 
+  {id: "52", label: "52",material:{type:'texture',texture: "/images/accessories/52.avif"},scaleX: 1,scaleY: 1   }, 
+  {id: "53", label: "53",material:{type:'texture',texture: "/images/accessories/53.avif"},scaleX: 1,scaleY: 1   },   
+  {id: "58", label: "58",material:{type:'texture',texture: "/images/accessories/58.avif"},scaleX: 1,scaleY: 1   },
+  {id: "59", label: "59",material:{type:'texture',texture: "/images/accessories/59.avif"},scaleX: 1,scaleY: 1   }, 
+  {id: "102", label: "102",material:{type:'texture',texture: "/images/accessories/102.avif"},scaleX: 1,scaleY: 1},  
+  {id: "106", label: "106",material:{type:'texture',texture: "/images/accessories/106.avif"},scaleX: 1,scaleY: 1   }, 
+  {id: "107", label: "107",material:{type:'texture',texture: "/images/accessories/107.avif"},scaleX: 1,scaleY: 1  }, 
+  {id: "108", label: "108",material:{type:'texture',texture: "/images/accessories/108.avif"},scaleX: 1,scaleY: 1 },
 ];
+
+export const TEMPLATES: any[] = [
+  {id: "1", label: "Template 1", image: "/images/template/material-board1.png"},
+  {id: "2", label: "Template 2", image: "/images/template/material-board2.png"},
+  {id: "3", label: "Template 3", image: "/images/template/material-board3.png"},
+]
 
 export const CURATED: CuratedItem[] = [
   { name: "Wolf Gordon — Wood Veneer Jatoba",  brand: "Wolf Gordon",     color: "#8B5A2B" },
