@@ -1,11 +1,12 @@
 "use client";
-import { Save, Undo, Redo, Share2, Download, FileText, Grid3X3, Maximize2, ScanSearch, Search, SlidersHorizontal, Filter } from "lucide-react";
+import { Save, Undo, Redo, Share2, Download, FileText, Grid3X3, Maximize2, ScanSearch, Search, SlidersHorizontal, Filter, Plus, Trash2 } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { STORAGE_KEY } from "../lib/data";
 import type { BoardItem } from "../types/board";
 import CanvasBoard from "../components/CanvasBoard";
 import LeftSidebar from "../components/LeftSidebar";
 import { useHistory } from  "../hooks/materialBoard/useHistory";
+import Header from "../components/Header";
 
 
 const sampleItems = [
@@ -68,7 +69,6 @@ const FLOOR_MATERIALS = [
 ];
 
 
-
 let counter = 100;
 const uid = () => `item-${++counter}`;
 
@@ -76,11 +76,13 @@ export default function MaterialBoard() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<any>(null);
   
+  
   const [items, setItems] = useState<BoardItem[]>(sampleItems);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedBackground, setBackground] = useState<string>("/images/background/8.jpg");
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
  
-  const [boardTitle, setBoardTitle] = useState("Golden Opulence");
+  
   const [rightTab, setRightTab] = useState<"Materials"|"Properties">("Materials");
 
   //-----------------------boardHistory start---------------------------------
@@ -131,7 +133,7 @@ export default function MaterialBoard() {
             return {
               ...i,
               material: {
-                type: 'color',
+                ...i.material,
                 color: colorCode,
               },
             };
@@ -167,151 +169,73 @@ export default function MaterialBoard() {
 
   const selectedItem = (items as any[]).find(i => i.id === selectedId) ?? null;
 
-  
-  const downloadBoard = () => {
-    const confirmSave = window.confirm("Do you want to save image this board?");
-    if (!confirmSave) return;
-
-    const ctx = rendererRef.current;
-    if (!ctx) return;
-    const { gl, scene, camera } = ctx;
-    // render latest frame
-    gl.render(scene, camera);
-    const dataURL = gl.domElement.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.href = dataURL;
-    link.download = "material-board.png";
-    link.click();
-  };
-
-  
-  const generateBoardImage = () => {
-    const ctx = rendererRef.current;
-    if (!ctx) return null;
-    const { gl, scene, camera } = ctx;
-    gl.render(scene, camera);
-    const dataURL = gl.domElement.toDataURL("image/png");
-    return dataURL; // 👈 important
-  };
-  
-  
-  const handleBoardSave = () => {
-    const confirmSave = window.confirm("Do you want to save this board?");
-    if (!confirmSave) return;
-
-    const image = generateBoardImage();
-
-    try {
-      const newBoard = {
-        id: "board-" + Math.random().toString(36).substring(2, 9),
-        title: boardTitle,
-        background: selectedBackground,
-        items,
-        image: image, // 👈 keep naming consistent with your UI
-        createdAt: new Date().toISOString(),
-      };
-      // 👉 Step 1: get existing data
-      const existing = localStorage.getItem(STORAGE_KEY);
-      // 👉 Step 2: parse or fallback to []
-      const boards = existing ? JSON.parse(existing) : [];
-      // 👉 Step 3: push new board
-      boards.push(newBoard);
-      // 👉 Step 4: save back
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(boards));
-
-    } catch (err) {
-      console.error("Save failed", err);
-    }
-  };
-
 
   //------------------ Template start ---------------------------------
 
-  const onAddDefaultTemplate = useCallback(() => {
+  const handleCreateBoard = useCallback(() => {
+    setActiveTemplateId(null);
     setItems([]);
     setBackground("");
   }, []);
 
   const onAddExistingTemplate = useCallback((template: any) => {
     if (!template || typeof template !== "object") return;
+    setActiveTemplateId(template.id);
     setItems(template.items || []);
     setBackground(template.background || "");
-
   }, []);
 
   //------------------Template end ---------------------------------
+
+  const handleDeleteBoard = () => {
+    if(!activeTemplateId) return;
+    const confirmDelete = window.confirm("Do you want to delete this board?");
+    if (!confirmDelete) return;
+
+    if (activeTemplateId) {
+      // 👉 Step 1: get existing data
+      const existing = localStorage.getItem(STORAGE_KEY);
+      // 👉 Step 2: parse or fallback to []
+      const boards = existing ? JSON.parse(existing) : [];
+      // 👉 Step 3: filter out the deleted board
+      const nextBoards = boards.filter((b: any) => b.id !== activeTemplateId);
+      // 👉 Step 4: save back
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextBoards));
+    } 
+
+
+
+
+    setActiveTemplateId(null);
+    setItems([]);
+    setBackground("");
+
+  }
 
 
 
   return (
     <div className="h-screen overflow-hidden flex flex-col" style={{fontFamily:"'Inter','Helvetica Neue',sans-serif",background:"#f5f4f2"}}>
-
-      <header className="flex items-center h-[52px] border-b border-gray-200 bg-white z-50 flex-shrink-0 px-3 gap-2">
-        <div className="flex items-center gap-2 mr-3 flex-shrink-0">
-          <div className="w-6 h-6 rounded bg-black flex items-center justify-center">
-            <div className="grid grid-cols-2 gap-[2px]">
-              {[0,1,2,3].map(i => <div key={i} className="w-[5px] h-[5px] bg-white rounded-[1px]"/>)}
-            </div>
-          </div>
-          <span className="font-semibold text-[14px] text-gray-900 whitespace-nowrap">MattoBoard</span>
-        </div>
-        <button className="flex items-center gap-1 text-[12px] text-gray-600 hover:text-gray-900 px-2 py-1 rounded hover:bg-gray-100 transition-colors whitespace-nowrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4"><path d="M4 6h16M4 12h16M4 18h16"/></svg> File
-        </button>
-        <button className="flex items-center gap-1 text-[12px] text-gray-600 hover:text-gray-900 px-2 py-1 rounded hover:bg-gray-100 transition-colors whitespace-nowrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> My Projects
-        </button>
-        <div className="flex items-center gap-0.5 ml-2 border border-gray-200 rounded-md bg-white px-1 py-0.5">
-          <ToolBtn title="Save" onClick={handleBoardSave}>
-            <Save size={14}/>
-          </ToolBtn>
-          <ToolBtn title="Undo" onClick={handleUndo} disabled={!canUndo}>
-            <Undo size={14}/>
-          </ToolBtn>
-          <ToolBtn title="Redo" onClick={handleRedo} disabled={!canRedo}>
-            <Redo size={14}/>
-          </ToolBtn>
-          <div className="w-px h-4 bg-gray-200 mx-0.5"/>
-          <ToolBtn title="Grid">
-            <Grid3X3 size={14}/>
-          </ToolBtn>
-          <ToolBtn title="Fit">
-            <Maximize2 size={14}/>
-          </ToolBtn>
-          <ToolBtn title="Focus"><ScanSearch size={14}/></ToolBtn>
-        </div>
-        <div className="flex-1 flex justify-center">
-          <input value={boardTitle} onChange={e => setBoardTitle(e.target.value)}
-            className="text-[15px] font-medium text-gray-800 text-center bg-transparent border-b border-transparent hover:border-gray-300 focus:border-gray-500 focus:outline-none px-3 py-0.5 min-w-[160px]"/>
-        </div>
-        <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
-          <button className="flex items-center gap-1.5 h-7 px-3 rounded border border-gray-200 text-[12px] font-medium text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
-            <Share2 size={12}/> Share
-          </button>
-          <button
-            onClick={() => downloadBoard()}
-            className="flex items-center gap-1.5 h-7 px-3 rounded border border-gray-200 text-[12px] font-medium text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap">
-            <Download size={12}/> Download
-          </button>
-          <button className="flex items-center h-7 px-2.5 rounded border border-gray-200 text-[12px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-            <FileText size={13}/>
-          </button>
-          <button className="flex items-center gap-1.5 h-7 px-3 rounded bg-emerald-50 border border-emerald-200 text-[12px] font-medium text-emerald-700 hover:bg-emerald-100 transition-colors whitespace-nowrap">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            Upgrade to Pro
-          </button>
-          <div className="w-7 h-7 rounded-full bg-rose-400 flex items-center justify-center text-[11px] font-bold text-white ml-1">A</div>
-        </div>
-      </header>
+      <Header
+        rendererRef={rendererRef}
+        selectBackground={setBackground}
+        items={items}        
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onCreateBoard={handleCreateBoard}
+        onDeleteBoard={handleDeleteBoard}
+      />
+      
 
       {/* MAIN BODY */}
       <div className="flex flex-1 overflow-hidden">
 
         <LeftSidebar
-          onAddItem={addItem}
+          //onAddItem={addItem}
           onAddBackground={addBackground}
           onAddMaterialColor={addMaterialColor}
-          onAddDefaultTemplate={onAddDefaultTemplate}
           onAddExistingTemplate ={onAddExistingTemplate}
         />
 
@@ -326,10 +250,10 @@ export default function MaterialBoard() {
             if (!raw) return;
             const rect = canvasRef.current?.getBoundingClientRect();
             if (!rect) return;
-            // Convert screen px → canvas-relative coords (0–1 range, or whatever your coord system uses)
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            handleDrop(x, y, raw);
+            // Pass normalized device coords (-1 to +1), not pixel offsets
+            const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            handleDrop(ndcX, ndcY, raw);
           }}
         >
           <CanvasBoard 
@@ -367,6 +291,8 @@ export default function MaterialBoard() {
                   <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] bg-gray-800 text-white text-[9px] rounded-full font-bold px-1">49473</span>
                 </button>
               </div>
+
+              
               <div className="flex-1 overflow-y-auto p-3">
                 <div className="grid grid-cols-2 gap-2">
                   {FLOOR_MATERIALS.map((m:any) => (
@@ -421,26 +347,5 @@ export default function MaterialBoard() {
   );
 }
 
-function ToolBtn({
-  children,
-  title,
-  onClick,
-  disabled = false
-}: {
-  children: React.ReactNode;
-  title?: string;
-  onClick?: () => void;
-    disabled?: boolean; // ✅ FIXED
-}) {
-  return (
-    <button
-      title={title}
-      onClick={onClick} // ✅ THIS
-      disabled={disabled} // ✅ FIXED
-      className="w-7 h-7 flex items-center justify-center rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors"
-    >
-      {children}
-    </button>
-  );
-}
+
 

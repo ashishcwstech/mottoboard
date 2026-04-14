@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Trash2,Plus,Minus, RotateCw } from "lucide-react";
+import { Trash2,Plus,Minus, RotateCw, Info } from "lucide-react";
 import CanvasBoardImageItem from "./CanvasBoardImageItem";
 import type { BoardItem } from "../types/board";
 
@@ -11,6 +11,7 @@ import * as THREE from "three";
 import { ThreeEvent } from "@react-three/fiber";
 import { Mesh, TextureLoader,MOUSE } from "three";
 import { useThree } from '@react-three/fiber';
+import ProductDetailsModal from "./ProductDetailsModal";
 
 interface Props {
   items: BoardItem[];
@@ -41,6 +42,10 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
   const [scale, setScale] = useState(1);
   const isBoardDragging = useRef(false);
   const [isBoardIteamDragging, setIsBoardIteamDragging] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [isItemDetailsOpen, setIsItemDetailsOpen] = useState(false);
+  
+
   const hasCanvasBoardDragged = useRef(false);
   const hasCanvasBoardItemDragged = useRef(false); 
 
@@ -74,6 +79,7 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
    
   };
   const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
+    console.log('Pointer up on item:');
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
     if (isBoardIteamDragging && hasCanvasBoardItemDragged.current) { // ✅ item ref
       flushAndSave();
@@ -82,22 +88,9 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     hasCanvasBoardItemDragged.current = false; // ✅ reset
   };
   //--------------pointer move for items----------------
-  const handlePointerMove = (e: ThreeEvent<PointerEvent>, id: string) => {
-    if (!isBoardIteamDragging || activeBoardItemId !== id) return; // ✅ ONLY move when holding
-    if (isItemRotating) return;  // 🔥 skip move when rotating
-    if (e.buttons !== 1) return; // 🔥 FIX: only drag when mouse is pressed
-
-    const currentRef = itemRefs.current[id];
-    if (!currentRef) return;
-    // currentRef.position.x += e.movementX * 0.003;
-    // currentRef.position.y -= e.movementY * 0.003;
-    currentRef.position.x += (e.movementX * 0.003) / scale;
-    currentRef.position.y -= (e.movementY * 0.003) / scale;
-    hasCanvasBoardItemDragged.current = true; // ✅ real movement happened
-    console.log('Moving item:', id, 'New position:', currentRef.position);
-  };
-
+  
   const handleCanvasPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+     if (isBoardIteamDragging) return;
     if (!isBoardDragging.current) return;
     setActiveBoardItemId(null);
     onSelect(null);
@@ -116,8 +109,23 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     //   y: e.clientY - start.current.y,
     // });
   };
-  //--------------------pointer down for background and items----------------
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>, id: string) => {
+    console.log('Pointer move on item:', id);
+    if (!isBoardIteamDragging || activeBoardItemId !== id) return; // ✅ ONLY move when holding
+    if (isItemRotating) return;  // 🔥 skip move when rotating
+    if (e.buttons !== 1) return; // 🔥 FIX: only drag when mouse is pressed
 
+    const currentRef = itemRefs.current[id];
+    if (!currentRef) return;
+    // currentRef.position.x += e.movementX * 0.003;
+    // currentRef.position.y -= e.movementY * 0.003;
+    currentRef.position.x += (e.movementX * 0.003) / scale;
+    currentRef.position.y -= (e.movementY * 0.003) / scale;
+    hasCanvasBoardItemDragged.current = true; // ✅ real movement happened
+    console.log('Moving item:', id, 'New position:', currentRef.position);
+  };
+
+  //--------------------pointer down for background and items----------------
   const handleCanvasPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;   // ✅ left only
     if (isBoardIteamDragging) return;
@@ -130,6 +138,8 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     // };
   };
   const handlePointerDown = (e: ThreeEvent<PointerEvent>, id: string) => {
+    console.log('Pointer down on item:', id);
+
     if (e.button !== 0) return;  // ✅ left only
     e.stopPropagation(); // 🔥 stop canvas drag
     setIsBoardIteamDragging(true);
@@ -165,8 +175,8 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     setIsItemRotating((prev) => !prev);
   };
   //---------------z axis rotation handler ---------------
-  const MAX_Z = 2; 
-  const [zRotation, setZRotation] = useState(0.1); // 0 → 1
+  const MAX_Z = 1; 
+  const [zRotation, setZRotation] = useState(0.01); // 0 → 1
   // const handleItemAxis = (
   //     id: string,
   //     e: React.MouseEvent<HTMLDivElement>
@@ -194,21 +204,49 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
   ) => {
     const ref = itemRefs.current[id];
     if (!ref) return;
-
     const container = sliderRef.current;
     if (!container) return;
-
     const rect = container.getBoundingClientRect();
     const y = e.clientY - rect.top;
     const height = rect.height;
-
-    let percent = 1 - y / height;
+    let percent = 0.9 - y / height;
     percent = Math.max(0, Math.min(1, percent));
-
-    setZRotation(percent);
+    console.log('percent', percent);
+    setZRotation(percent);    
     ref.position.z = percent * MAX_Z;
-    flushAndSave();
+    //flushAndSave();
   };
+
+
+  const viewItemDetails = () => {
+    if (!activeBoardItemId) return;
+    const item = items.find(i => i.id === activeBoardItemId);
+    if (!item) return;
+
+    // ✅ dynamic product
+    const product = {
+      id: item.id,
+      name: item.name || "Product Name",
+      brand: "Brand",
+      description:"",
+      // 🔥 IMPORTANT (dynamic image)
+      image: item.material.texture ,  
+      // optional multiple images
+      thumbnails: [item.material.texture],
+      material: "Fabric Wallcovering",
+      region: "Western Europe",
+      usage: "Commercial & Residential",
+      price: "$$$$"
+    };
+
+  
+
+    setSelectedProduct(product);   // ✅ store data
+    setIsItemDetailsOpen(true);
+    
+
+  }
+  
  
 
   
@@ -220,7 +258,7 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
   //   const raw = e.dataTransfer.getData("application/board-item");
   //   if (!raw) return;
   //   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-  //   onDrop(e.clientX - rect.left - 55, e.clientY - rect.top - 40, raw);
+//   onDrop(e.clientX - rect.left - 55, e.clientY - rect.top - 40, raw);
   // };
 
 
@@ -256,35 +294,50 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
       ref={canvasWrapperRef} 
       className="w-full h-screen flex-1 relative overflow-hidden bg-gray-200 bg-sand-100 bg-dot-pattern bg-dot-28 bg-cover bg-center"
     >
+      {isItemDetailsOpen && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          isOpen={isItemDetailsOpen}
+          onClose={() => setIsItemDetailsOpen(false)}
+        />
+      )}
       {activeBoardItemId && (
-        <div className="absolute top-10 left-10   rounded p-2 flex gap-2 z-50">        
+        <div className="absolute top-10 left-10 rounded p-2 flex gap-2 z-50"
+        >        
             <div className="grid  top-10 left-10 bg-white  shadow-lg rounded p-2  gap-2">
               <button
                 onClick={() => handleItemDelete(activeBoardItemId)}
-                className="px-2 py-1  text-black rounded"
+                className="px-2 py-1  text-black rounded hover:bg-red-100"
               >
                 <Trash2 size={18} />
               </button>
               {/* 🔄 Rotate */}
               <button
                 onClick={() => handleItemRotate()}
-                className="p-2 rounded"
+                className="p-2 rounded hover:bg-red-100"
                 title="Rotate"
               >
                 <RotateCw size={18}  />
               </button>
               <button
                 onClick={() => handleItemSize(activeBoardItemId, 1.2)}
-                className="px-2 py-1  text-black  rounded"
+                className="px-2 py-1  text-black  rounded hover:bg-red-100"
               >
                 <Plus size={18} />
               </button>
               
               <button
                 onClick={() => handleItemSize(activeBoardItemId, 0.8)}
-                className="px-2 py-1  text-black rounded"
+                className="px-2 py-1  text-black rounded hover:bg-red-100"
               >
                 <Minus size={18} />
+              </button>
+              <button
+                title="Product Details" // 👈 hover text
+                onClick={() => viewItemDetails()}
+                className="px-2 py-1  text-black rounded hover:bg-red-100"
+              >
+                <Info size={18} />
               </button>
             </div>
             <div>
@@ -311,13 +364,16 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
                     e.currentTarget.releasePointerCapture(e.pointerId);
                   }}
                   className="relative h-64 w-3 bg-green-500 rounded-full cursor-pointer"
+                  //  style={{ width: "12px" }} 
                 >
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 w-6 h-6 bg-white rounded-full shadow"
-                    style={{
-                      bottom:`${zRotation * 100}%`,
-                    }}
-                  />
+                      {/* Visual track — centered, thin */}
+                      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-3 bg-green-500 rounded-full" />
+
+                      {/* Thumb knob */}
+                      <div
+                        className="absolute left-1/2 -translate-x-1/2 w-6 h-6 bg-white rounded-full shadow pointer-events-none"
+                        style={{ bottom: `${zRotation * 100}%` }}
+                      />
                 </div>
             </div>
 
@@ -332,7 +388,6 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
             gl.shadowMap.type = THREE.PCFShadowMap;
             onReady?.({ gl, scene, camera });
           }}
-
           // onCreated={({ camera }) => {
           //   camera.lookAt(0, 0, 0);
           // }}
@@ -344,8 +399,11 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
           camera={{ position: [0, 0, 6], fov: 50 }}
         >
           <group position={[position.x, position.y, 0]} scale={[scale, scale, scale]}>
-                {background && <Background image={background} position={position}
-                scale={scale} />}
+                {background && <Background 
+                    image={background} 
+                    position={position} 
+                    scale={scale}
+                />}
 
                 {/* Light */}
                 <ambientLight intensity={0.5} />
@@ -433,7 +491,7 @@ function Background({ image, position, scale }: BackgroundProps) {
     <mesh
       ref={meshRef}
       //position={[0, 0, -1]}
-      position={[position.x, position.y, -1]}
+      //position={[position.x, position.y, -1]}      backgound move with items
      // scale={[scale, scale, 1]}
       rotation={[0, 0, 0]}
       //scale={[1, 1, 1]}

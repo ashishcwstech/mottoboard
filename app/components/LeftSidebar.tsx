@@ -34,21 +34,19 @@ const FLOOR_MATERIALS = [
 
 
 interface Props {
-  onAddItem: (partial: Omit<BoardItem, "id">) => void;
+  //onAddItem: (partial: Omit<BoardItem, "id">) => void;
   onAddBackground: (url: string) => void;
   onAddMaterialColor: (color: string) => void;
-  onAddDefaultTemplate: () => void;
   onAddExistingTemplate: (template: any) => void;
 }
 
 export default function LeftSidebar({
-  onAddItem,
+ // onAddItem,
   onAddBackground,
   onAddMaterialColor,
-  onAddDefaultTemplate,
   onAddExistingTemplate
 }: Props) {
-   const [active, setActive] = useState<NavItem>("Accessories");
+  const [active, setActive] = useState<NavItem>("Accessories");
   const [searchQuery, setSearchQuery] = useState("");
   let TEMPLATES: any[] = [];
   if (active === "Templates") {
@@ -121,7 +119,7 @@ export default function LeftSidebar({
                         material:{type: 'texture',texture: f.material.texture},
                         image: f.material.texture, z: 0.99, height: 50, width: 50, type: "Accessory", name: f.label,
                       }))}
-                      onClick={() => onAddItem({ material:{type: 'texture',texture: f.material.texture}, x: 0.5, y: 0.5, z: 0.91, height: 50, width: 50, type: "Accessory", name: f.label })}
+                     // onClick={() => onAddItem({ material:{type: 'texture',texture: f.material.texture}, x: 0.5, y: 0.5, z: 0.91, height: 50, width: 50, type: "Accessory", name: f.label })}
                       className="flex items-center gap-3 px-2 py-2 rounded-lg border border-gray-100 bg-gray-50 hover:bg-white hover:shadow-md hover:border-gray-200 transition-all duration-150 text-left"
                     >
                       <div className="w-full h-25 flex-shrink-0 rounded-md overflow-hidden bg-white flex items-center justify-center border border-gray-100">
@@ -136,15 +134,8 @@ export default function LeftSidebar({
             {/* Templates */}
             {active === "Templates" && (
               <div className="p-3 gap-2">
-                <div className="grid gap-2">
-                    <button
-                      onClick={() => onAddDefaultTemplate()}
-                      className="flex items-center gap-1.5 h-8 w-full px-3 text-center rounded border bg-blue-500 text-white border-gray-200 text-[12px] font-medium text-gray-600  transition-colors whitespace-nowrap">
-                       <Plus size={12}/> Add Template
-                    </button>             
-                </div>
+              
                 <div className="p-3 grid gap-2">
-
                   {TEMPLATES?.map((f) => (
                     <button
                       key={f.id}

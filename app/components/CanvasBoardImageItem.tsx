@@ -11,7 +11,7 @@ import React from "react";
 import * as THREE from 'three';
 
 type Item = {
-  id: string;
+  id: string; 
   image: string;
   x: number;
   y: number;
@@ -140,15 +140,13 @@ const CanvasBoardImageItem = forwardRef<Mesh, Props>(
        
           <mesh>
             <planeGeometry args={[w, h]} />
-
-            {item.material.type === "color" ? (
-              <meshStandardMaterial color={item.material.color} />
-            ) : item.material.type === "fabric" ? (
-              <meshStandardMaterial map={texture} transparent roughness={item.material.roughness} metalness={item.material.metalness} />
+            {item.material.type === "fabric" ? (
+              <meshStandardMaterial map={texture} color={item.material.color} roughness={item.material.roughness} metalness={item.material.metalness} />
             ) : (
                <meshStandardMaterial
                 map={texture}
                 transparent
+                color={item.material.color}
                 alphaTest={0.1}
                 roughness={item.material.roughness ?? 0.7}
                 metalness={item.material.metalness ?? 0.05}
