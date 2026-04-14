@@ -33,7 +33,7 @@ const FLOOR_MATERIALS = [
 ];
 
 
-interface Props {
+interface Props {   
   //onAddItem: (partial: Omit<BoardItem, "id">) => void;
   onAddBackground: (url: string) => void;
   onAddMaterialColor: (color: string) => void;

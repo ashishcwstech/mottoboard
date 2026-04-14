@@ -37,6 +37,7 @@ type State = {
 
 export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onDrop,onDelete, background,onSaveSnapshot,onReady }: Props) { 
   const [position, setPosition] = useState({ x: 0, y: 0 });  
+  const [toolbarPos, setToolbarPos] = useState<{ x: number; y: number } | null>(null);
   const start = useRef({ x: 0, y: 0 });
   
   const [scale, setScale] = useState(1);
@@ -45,7 +46,6 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isItemDetailsOpen, setIsItemDetailsOpen] = useState(false);
   
-
   const hasCanvasBoardDragged = useRef(false);
   const hasCanvasBoardItemDragged = useRef(false); 
 
@@ -122,6 +122,7 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     currentRef.position.x += (e.movementX * 0.003) / scale;
     currentRef.position.y -= (e.movementY * 0.003) / scale;
     hasCanvasBoardItemDragged.current = true; // ✅ real movement happened
+     updateToolbarPos(id); 
     console.log('Moving item:', id, 'New position:', currentRef.position);
   };
 
@@ -132,6 +133,10 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     isBoardDragging.current = true;
     hasCanvasBoardDragged.current = false; // ✅ reset
     start.current = { x: e.clientX, y: e.clientY };
+
+    // In handleCanvasPointerDown (when clicking empty canvas):
+    setActiveBoardItemId(null);
+    //setToolbarPos(null);
     // start.current = {
     //   x: e.clientX - position.x,
     //   y: e.clientY - position.y,
@@ -144,8 +149,10 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
     e.stopPropagation(); // 🔥 stop canvas drag
     setIsBoardIteamDragging(true);
     setActiveBoardItemId(id);
-     onSelect(id);
-     console.log('id',selectedId);
+    updateToolbarPos(id);
+
+    console.log('check axis', itemRefs.current[id].position.x, itemRefs.current[id].position.y, itemRefs.current[id].position.z);
+    onSelect(id);
     setZRotation(itemRefs.current[id].position.z)   //set z axis when item click
 
     hasCanvasBoardItemDragged.current = false; // ✅ reset
@@ -170,6 +177,7 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
       scaleX: (currentRef.scale.x),
       scaleY: (currentRef.scale.y),
     });
+     updateToolbarPos(id); // ← add this
   };
   const handleItemRotate = () => {
     setIsItemRotating((prev) => !prev);
@@ -239,32 +247,39 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
       price: "$$$$"
     };
 
-  
 
     setSelectedProduct(product);   // ✅ store data
     setIsItemDetailsOpen(true);
-    
-
   }
+
+  const updateToolbarPos = useCallback((id: string) => {
+    const ref = itemRefs.current[id];
+    const camera = cameraRef.current;
+    const wrapper = canvasWrapperRef.current;
+    if (!ref || !camera || !wrapper) return;
+
+    const worldPos = new THREE.Vector3();
+    ref.getWorldPosition(worldPos); // accounts for group transform too
+
+    const projected = worldPos.clone().project(camera);
+
+    const rect = wrapper.getBoundingClientRect();
+    const x = (projected.x * 0.5 + 0.5) * rect.width;
+    const y = (-projected.y * 0.5 + 0.5) * rect.height;
+
+    // Place toolbar above item — clamp to viewport
+    const TOOLBAR_W = 280; // your toolbar width
+    const TOOLBAR_H = 40;
+    const GAP = 100;
+
+    setToolbarPos({
+      x: Math.max(8, Math.min(x - TOOLBAR_W / 2, rect.width - TOOLBAR_W - 8)),
+      y: Math.max(8, y - TOOLBAR_H - GAP),
+    });
+  }, []);
   
- 
 
-  
-
-  // const handleDragOver = (e: React.DragEvent) => e.preventDefault();
-
-  // const handleDrop = (e: React.DragEvent) => {
-  //   e.preventDefault();
-  //   const raw = e.dataTransfer.getData("application/board-item");
-  //   if (!raw) return;
-  //   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-//   onDrop(e.clientX - rect.left - 55, e.clientY - rect.top - 40, raw);
-  // };
-
-
-  // const boardRef = useRef<THREE.Group>(null!);
-
-
+  const cameraRef = useRef<THREE.Camera | null>(null);
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
   // ✅ wheel handler — replace saveState() with flushAndSave()
@@ -287,6 +302,22 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
   }, [flushAndSave]);  // ✅ flushAndSave in deps, not empty array
 
 
+  // const handleExternalDrop = useCallback((ndcX: number, ndcY: number, raw: string) => {
+  //   const camera = cameraRef.current;
+  //   if (!camera) return;
+
+  //   // Unproject NDC to world space at z=0 (the canvas plane)
+  //   const vec = new THREE.Vector3(ndcX, ndcY, 0.5);
+  //   vec.unproject(camera);
+
+  //   // Correct for current pan offset and scale
+  //   const worldX = (vec.x - position.x) / scale;
+  //   const worldY = (vec.y - position.y) / scale;
+
+  //   onDrop(worldX, worldY, raw);
+  // }, [position, scale, onDrop]);
+
+
 
 
   return (
@@ -301,10 +332,12 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
           onClose={() => setIsItemDetailsOpen(false)}
         />
       )}
-      {activeBoardItemId && (
-        <div className="absolute top-10 left-10 rounded p-2 flex gap-2 z-50"
+      {activeBoardItemId && toolbarPos && (
+        <div className="absolute rounded p-2 flex gap-2 z-50"
+         style={{ left: toolbarPos.x, top: toolbarPos.y }}
+         //style={{ left: -1.396000000000001, top: 0.10156000000000007 }}
         >        
-            <div className="grid  top-10 left-10 bg-white  shadow-lg rounded p-2  gap-2">
+            <div className="grid  bg-white  shadow-lg rounded p-2  gap-2">
               <button
                 onClick={() => handleItemDelete(activeBoardItemId)}
                 className="px-2 py-1  text-black rounded hover:bg-red-100"
@@ -386,6 +419,7 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
           onCreated={({ gl, scene, camera }) => {
             gl.shadowMap.enabled = true;
             gl.shadowMap.type = THREE.PCFShadowMap;
+            cameraRef.current = camera;          // ← store camera
             onReady?.({ gl, scene, camera });
           }}
           // onCreated={({ camera }) => {
