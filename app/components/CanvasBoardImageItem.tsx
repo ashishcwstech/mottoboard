@@ -32,22 +32,22 @@ type Props = {
 
 const CanvasBoardImageItem = forwardRef<Mesh, Props>(
   ({ item,  onPointerDown, onPointerUp, onPointerMove }, ref) => {
-      const EMPTY_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
-      const texturePath = item.material?.texture || EMPTY_TEXTURE;
-      const texture = useTexture(texturePath) as THREE.Texture;
-      useEffect(() => {
-        if (!texture) return;
-        if (item.material.type === "fabric") {
-          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-          const [rx, ry] = item.material.repeat ?? [1, 1];
-          texture.repeat.set(rx, ry);
-        } else {
-          // 'texture', 'image', anything else → no tiling
-          texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-          texture.repeat.set(1, 1);
-        }
-        texture.needsUpdate = true;
-      }, [texture, item.material.type]);
+    const EMPTY_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+    const texturePath = item.material?.texture || EMPTY_TEXTURE;
+    const texture = useTexture(texturePath) as THREE.Texture;
+    useEffect(() => {
+      if (!texture) return;
+      if (item.material.type === "fabric") {
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        const [rx, ry] = item.material.repeat ?? [1, 1];
+        texture.repeat.set(rx, ry);
+      } else {
+        // 'texture', 'image', anything else → no tiling
+        texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.repeat.set(1, 1);
+      }
+      texture.needsUpdate = true;
+    }, [texture, item.material.type]);
 
     const groupRef = useRef<any>(null);
     const shadowRef = useRef<Mesh<any, MeshBasicMaterial>>(null);
@@ -81,7 +81,7 @@ const CanvasBoardImageItem = forwardRef<Mesh, Props>(
     // const targetHeight = 2;  // your desired height
     // const scaleX = targetWidth / item.x;
     // const scaleY = targetHeight / item.y;
-    // // keep proportion
+    // // keep proportion         
     // const scalePrimitive = Math.min(scaleX, scaleY);
 
     // const scalePrimitive = useMemo(() => {
@@ -132,28 +132,26 @@ const CanvasBoardImageItem = forwardRef<Mesh, Props>(
             transparent
             opacity={0.18}
             color="#000000"
-            depthWrite={false}
+            depthWrite={false}r
             depthTest={false} // ✅ always render, ignore depth
           />
         </mesh> */}
-
-       
-          <mesh>
+        <mesh>
             <planeGeometry args={[w, h]} />
-            {item.material.type === "fabric" ? (
-              <meshStandardMaterial map={texture} color={item.material.color} roughness={item.material.roughness} metalness={item.material.metalness} />
-            ) : (
-               <meshStandardMaterial
-                map={texture}
-                transparent
-                color={item.material.color}
-                alphaTest={0.1}
-                roughness={item.material.roughness ?? 0.7}
-                metalness={item.material.metalness ?? 0.05}
-              />
-            )}
-            
-          </mesh>
+          {item.material.type === "fabric" ? (
+            <meshStandardMaterial map={texture} color={item.material.color} roughness={item.material.roughness} metalness={item.material.metalness} />
+          ) : (
+              <meshStandardMaterial
+              map={texture}
+              transparent
+              color={item.material.color}
+              alphaTest={0.1}
+              roughness={item.material.roughness ?? 0.7}
+              metalness={item.material.metalness ?? 0.05}
+            />
+          )}
+          
+        </mesh>
       </group>
     );
   },

@@ -317,9 +317,6 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
   //   onDrop(worldX, worldY, raw);
   // }, [position, scale, onDrop]);
 
-
-
-
   return (
     <div
       ref={canvasWrapperRef} 
@@ -334,8 +331,7 @@ export default function CanvasBoard({ items, selectedId, onSelect, onUpdate, onD
       )}
       {activeBoardItemId && toolbarPos && (
         <div className="absolute rounded p-2 flex gap-2 z-50"
-         style={{ left: toolbarPos.x, top: toolbarPos.y }}
-         //style={{ left: -1.396000000000001, top: 0.10156000000000007 }}
+          style={{ left: toolbarPos.x, top: toolbarPos.y }}
         >        
             <div className="grid  bg-white  shadow-lg rounded p-2  gap-2">
               <button
